@@ -39,19 +39,24 @@ namespace Bikroy
 
         public HtmlDocument GetWebRequest()
         {
-            HttpClient httpClient = new HttpClient();
-
             HtmlDocument document = new HtmlDocument();
-            byte[] responseBytes;
-            //if (!cache.IsCachedUrl(Url))
-            //{
+            try
+            {
+                HttpClient httpClient = new HttpClient();
+                httpClient.Timeout = 180000;
+           
+                byte[] responseBytes;
+                //if (!cache.IsCachedUrl(Url))
+                //{
                 responseBytes = httpClient.DownloadData(Url);
-            //    CacheDb.SaveCache(Url, responseBytes);
-            //}
-            //else
-            //    responseBytes = cache.GetCachedUrl(Url);
-            MemoryStream mStream = new MemoryStream(responseBytes);
-            document.Load(mStream, Encoding.UTF8);
+                //    CacheDb.SaveCache(Url, responseBytes);
+                //}
+                //else
+                //    responseBytes = cache.GetCachedUrl(Url);
+                MemoryStream mStream = new MemoryStream(responseBytes);
+                document.Load(mStream, Encoding.UTF8);
+            }
+            catch { }
             return document;
         }
 

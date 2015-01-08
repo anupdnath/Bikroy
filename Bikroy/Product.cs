@@ -33,6 +33,7 @@ namespace Bikroy
         public string Desc { get; set; }
         //public List<string> ImagePath { get; set; }
         public string ImageSrc { get; set; }
+        public String ImageDir { get; set; }
         public Product()
         {
             //ImagePath = new List<string>();
