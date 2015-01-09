@@ -13,6 +13,8 @@ using HtmlAgilityPack;
 using System.Reflection;
 using System.IO;
 using System.Text.RegularExpressions;
+using MySql.Data.MySqlClient;
+
 namespace Bikroy
 {
     public partial class Form1 : Form
@@ -23,6 +25,8 @@ namespace Bikroy
             InitializeComponent();
         }
 
+        #region [Main Scraper]	
+        
         private void ScrapProcess()
         {
 
@@ -84,7 +88,7 @@ namespace Bikroy
 
                         }
                     }
-
+                    InsertToDatabase(oProduct);
                     Products.Add(oProduct);
                 }
             }
@@ -105,94 +109,17 @@ namespace Bikroy
             }
             //
         }
+        #endregion
 
         private void btnTest_Click(object sender, EventArgs e)
         {
 
             ScrapProcess();
 
-            //List<Product> Products = new List<Product>();
-            //String criteria = "";
-            //browser.Url = "http://bikroy.com/en/ads-in-bangladesh?_=1420294568273";
-            //Console.Write("Please Wait.....");
-            //String response = browser.AjaxPost();
-            ////String productsJson = browser.parseJson(browser.parseJson(browser.parseJson(response)["ads"].ToString())["Response"].ToString())["Products"].ToString();
-            //String productsJson = browser.parseJson(response)["ads"].ToString().ToString();
-            //// Product oProducts = JsonConvert.DeserializeObject<Product>(productsJson);
-
-            ////int CurrentPage = Convert.ToInt32(browser.parseJson(productsJson)["CurrentPage"].ToString());
-            ////int TotalPages = Convert.ToInt32(browser.parseJson(productsJson)["TotalPages"].ToString());
-
-            ////productsJson = browser.parseJson(productsJson).ToString();
-            //Newtonsoft.Json.Linq.JArray a = Newtonsoft.Json.Linq.JArray.Parse(productsJson);
-            //foreach (Newtonsoft.Json.Linq.JObject o in a.Children<Newtonsoft.Json.Linq.JObject>())
-            //{
-            //    Product oProduct = new Product();
-            //    foreach (Newtonsoft.Json.Linq.JProperty p in o.Properties())
-            //    {
-            //        string name = p.Name;
-            //        string value = p.Value.ToString();
-            //        if (name == "location")
-            //        {
-            //            oProduct.location = p.Value.ToString();
-            //        }
-            //        if (name == "category")
-            //        {
-            //            oProduct.category = p.Value.ToString();
-            //        }
-            //        if (name == "slug")
-            //        {                        
-            //            string url = "http://bikroy.com/en/" + p.Value.ToString();
-            //            oProduct.URL = url;
-            //            oProduct = parsepage(url, oProduct);
-            //        }
-            //        if (name == "poster_name")
-            //        {
-            //            oProduct.poster_name = p.Value.ToString();
-            //        }
-            //        if (name == "title")
-            //        {
-            //            oProduct.title = p.Value.ToString();
-            //        }
-            //        //if (name == "show_image")
-            //        //{
-            //        //    oProduct.show_image = p.Value.ToString();
-            //        //}
-            //        if (name == "show_attr")
-            //        {
-            //            oProduct.show_attr = p.Value.ToString().Replace("{", "").Replace("}", "").Replace('"', ' ').Replace(" value :", "").Trim();
-
-            //        }
-            //    }
-
-            //    Products.Add(oProduct);
-            //}
-
-            //////Get other details
-            ////if (Products.Count() > 0)
-            ////{
-            ////    foreach (Product p in Products)
-            ////    {
-            ////        string url = "http://bikroy.com/en/" + p.slug;
-            ////        parsepage(url,p);
-            ////    }
-            ////}
-            //var wb = new ClosedXML.Excel.XLWorkbook();
-            //DataTable dt = Products.ToDataTable();   
-
-            //// Add a DataTable as a worksheet
-            //wb.Worksheets.Add(dt, "Report");
-            //SaveFileDialog sfd = new SaveFileDialog();
-            //sfd.Filter = "Excel Documents (*.xlsx)|*.xlsx";
-            //sfd.FileName = "Report.xlsx";
-            //if (sfd.ShowDialog() == DialogResult.OK)
-            //{
-            //    //ToCsV(dataGridView1, @"c:\export.xls");
-            //    wb.SaveAs(sfd.FileName); // Here dataGridview1 is your grid view name 
-            //}
-            //Application.Exit();
         }
 
+        #region [Details Page Scrap]
+       
         private Product parsepage(string url, Product oProduct)
         {
             //Product oProduct = new Product();
@@ -249,6 +176,9 @@ namespace Bikroy
             //}
             return oProduct;
         }
+        #endregion
+
+        #region [Image process]
 
         public static String GetValidDirName(String DirName)
         {
@@ -329,7 +259,10 @@ namespace Bikroy
 
             return ImageFileName;
         }
+        #endregion
 
+        #region [Email]
+      
         public string emas(string text)
         {
             string email = string.Empty;
@@ -351,10 +284,74 @@ namespace Bikroy
             }
             return email;
         }
+        #endregion
 
+        #region [Data Insert]
+        private void InsertToDatabase(Product oProduct)
+        {
+            int catID = 0;
+            int lID = 0;
+            setting s = new setting();
+            string catagory = "select id_category from oc_categories where name='"+oProduct.category+"'";
+            DataTable dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
+            if (dt.Rows.Count > 0)
+            {
+                catID =int.Parse(dt.Rows[0][0].ToString());
+            }
+            else
+            {
+                catagory = "INSERT INTO barua910_oc1.oc_categories(`name`,`order`,created,id_category_parent,parent_deep,seoname,description,price,last_modified,has_image)VALUES('" + oProduct.category + "',0,CURTIME(),0,0,'" + oProduct.category + "','" + oProduct.category + "',0,NOW(),0)";
+                int k = s.InsertOrUpdateOrDeleteValueToDatabase(catagory);
+                catagory = "select id_category from oc_categories where name='" + oProduct.category + "'";
+                dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
+                if (dt.Rows.Count > 0)
+                {
+                    catID = int.Parse(dt.Rows[0][0].ToString());
+                }
+            }
+
+            string location = "select id_location from oc_locations where name='" + oProduct.location + "'";
+            DataTable dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
+            if (dtL.Rows.Count > 0)
+            {
+                lID = int.Parse(dtL.Rows[0][0].ToString());
+            }
+            else
+            {
+                location = "INSERT INTO barua910_oc1.oc_locations(`name`,`order`,id_location_parent,parent_deep,seoname,description,last_modified,has_image)VALUES('" + oProduct.location + "',0,0,0,'" + oProduct.location + "','" + oProduct.location + "',NOW(),0);";
+                int k = s.InsertOrUpdateOrDeleteValueToDatabase(location);
+                location = "select id_location from oc_locations where name='" + oProduct.location + "'";
+                dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
+                if (dt.Rows.Count > 0)
+                {
+                    lID = int.Parse(dtL.Rows[0][0].ToString());
+                }
+            }
+
+            if (catID > 0)
+            {
+                decimal price = 0;
+                string p=oProduct.show_attr.Replace("Tk.","");
+                if(p!="Negotiable price")
+                {
+                    if (Decimal.TryParse(p, out price))
+                    price = decimal.Parse(p);
+                }
+                string ads = "Select * from oc_ads where website='"+oProduct.URL+"'";
+                DataTable dta = s.selectAllfromDatabaseAndReturnDataTable(ads);
+                if (dta.Rows.Count > 0)
+                {}
+                else
+                {
+                    ads = "INSERT INTO barua910_oc1.oc_ads(id_user,id_category,id_location,title,seotitle,description,address,price,phone,website,ip_address,created,published,featured,last_modified,status,has_images,stock,rate)VALUES(1," + catID + "," + lID + ",'" + oProduct.title + "','" + oProduct.title + "','" + oProduct.Desc + "','" + oProduct.location + "'," + price + ",'" + oProduct.Phone + "','" + oProduct.URL + "',0,NOW(),NOW(),NOW(),NOW(),0,1,0,0);";
+                    int k2 = s.InsertOrUpdateOrDeleteValueToDatabase(ads);
+                }
+            }
+        }
+        #endregion
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+           
         }
     }
 }
