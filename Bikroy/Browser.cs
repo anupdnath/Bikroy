@@ -146,8 +146,12 @@ namespace Bikroy
         //}
         public void DownloadFile(String FileName)
         {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DownloadFile(Url, FileName);
+            try
+            {
+                HttpClient httpClient = new HttpClient();
+                httpClient.DownloadFile(Url, FileName);
+            }
+            catch { }
         }
 
         public NameValueCollection GetFormData(HtmlDocument document)

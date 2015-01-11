@@ -31,12 +31,12 @@ namespace Bikroy
         public string Email { get; set; }
         public string Phone { get; set; }
         public string Desc { get; set; }
-        //public List<string> ImagePath { get; set; }
+        public List<string> ImagePath { get; set; }
         public string ImageSrc { get; set; }
         public String ImageDir { get; set; }
         public Product()
         {
-            //ImagePath = new List<string>();
+            ImagePath = new List<string>();
             //show_attr = new List<ProductPrice>();
         }
     }
