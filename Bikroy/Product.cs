@@ -10,6 +10,7 @@ namespace Bikroy
     public class Product
     {
         public String location { get; set; }
+        public String Address { get; set; }
         public String category { get; set; }
         public String poster_name { get; set; }
         public String title { get; set; }
@@ -34,20 +35,24 @@ namespace Bikroy
         public List<string> ImagePath { get; set; }
         public string ImageSrc { get; set; }
         public String ImageDir { get; set; }
+        public string Website { get; set; }
+        public string slug { get; set; }
         public Product()
         {
             ImagePath = new List<string>();
             //show_attr = new List<ProductPrice>();
         }
     }
-   public class ProductPrice
-   {
-       public string PropertyName { get; set; }
-       public string PropertyValue { get; set; }
-   }
-   public class RootObject
-   {
-       public List<Product> listProduct { get; set; }
+    public class Keyvalue
+    {
+        public string PropertyName { get; set; }
+        public string PropertyValue { get; set; }
+    }
+    public class RootObject
+    {
+        public List<Product> listProduct { get; set; }
+    }
+
+   
 }
-   }
 

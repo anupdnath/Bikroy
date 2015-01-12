@@ -78,9 +78,10 @@ namespace Bikroy
                             if (name == "slug")
                             {
                                 string url = "http://bikroy.com/en/" + p.Value.ToString();
+                                oProduct.slug = p.Value.ToString();
                                 oProduct.ImageDir = p.Value.ToString();
                                 oProduct.URL = url;
-                                oProduct = parsepage(url, oProduct);
+                               
                             }
                             if (name == "poster_name")
                             {
@@ -100,8 +101,12 @@ namespace Bikroy
 
                             }
                         }
-                        InsertToDatabase(oProduct);
-                        Products.Add(oProduct);
+                        if (CatagoryID(oProduct.category) > 0)
+                        {
+                            oProduct = parsepage(oProduct.URL, oProduct);
+                            InsertToDatabase(oProduct);
+                            Products.Add(oProduct);
+                        }
                     }
 
                 }
@@ -149,6 +154,7 @@ namespace Bikroy
                 {
                     oProduct.Desc = node.InnerText;
                     oProduct.Email = emas(oProduct.Desc);
+                    oProduct.Website = MakeLink(oProduct.Desc);
                 }
 
                 HtmlNodeCollection linkNodes1 = doc.DocumentNode.SelectNodes("//div[@class='attr']");
@@ -160,7 +166,7 @@ namespace Bikroy
                         if (labelNode.InnerText == "Location:")
                         {
                             HtmlNode valueNode = linkNode.SelectSingleNode(".//span[@class='value']");
-                            oProduct.location = valueNode.InnerText;
+                            oProduct.Address = valueNode.InnerText;
                         }
                     }
                 }
@@ -313,6 +319,41 @@ namespace Bikroy
         }
         #endregion
 
+        #region [WEB]
+
+        protected string MakeLink(string txt)
+        {
+            string webaddress = string.Empty;
+            Regex urlRx = new
+            Regex(@"(?<url>(http:|https:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)",
+            RegexOptions.IgnoreCase);
+
+            MatchCollection matches = urlRx.Matches(txt);
+            foreach (Match match in matches)
+            {
+                webaddress=match.Value;
+                break;
+            }
+           
+            return webaddress;
+        }
+        #endregion
+
+        #region [Catagory ID]
+        private int CatagoryID(string category)
+        {
+            int catID = 0;           
+            MyTable oMyTable = new MyTable();
+            List<KeyValuePair<string, string>> catagoryList = new List<KeyValuePair<string, string>>();
+            catagoryList = oMyTable.CatagoryList();
+            foreach (KeyValuePair<string, string> kvp in catagoryList)
+            {
+                if (kvp.Key == category)
+                    catID = int.Parse(kvp.Value);
+            }
+            return catID;
+        }
+        #endregion
         #region [Data Insert]
         private void InsertToDatabase(Product oProduct)
         {
@@ -321,43 +362,52 @@ namespace Bikroy
                 int catID = 0;
                 int lID = 0;
                 setting s = new setting();
-                string catagory = "select id_category from oc_categories where name='" + oProduct.category + "'";
-                DataTable dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
-                if (dt.Rows.Count > 0)
-                {
-                    catID = int.Parse(dt.Rows[0][0].ToString());
-                }
-                else
-                {
-                    catagory = "INSERT INTO barua910_oc1.oc_categories(`name`,`order`,created,id_category_parent,parent_deep,seoname,description,price,last_modified,has_image)VALUES('" + oProduct.category + "',0,CURTIME(),0,0,'" + oProduct.category + "','" + oProduct.category + "',0,NOW(),0)";
-                    int k = s.InsertOrUpdateOrDeleteValueToDatabase(catagory);
-                    catagory = "select id_category from oc_categories where name='" + oProduct.category + "'";
-                    dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
-                    if (dt.Rows.Count > 0)
-                    {
-                        catID = int.Parse(dt.Rows[0][0].ToString());
-                    }
-                }
+                MyTable oMyTable = new MyTable();
+                catID = CatagoryID(oProduct.category);
+                //string catagory = "select id_category from oc_categories where name='" + oProduct.category + "'";
+                //DataTable dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
+                //if (dt.Rows.Count > 0)
+                //{
+                //    catID = int.Parse(dt.Rows[0][0].ToString());
+                //}
+                //else
+                //{
+                //    catagory = "INSERT INTO barua910_oc1.oc_categories(`name`,`order`,created,id_category_parent,parent_deep,seoname,description,price,last_modified,has_image)VALUES('" + oProduct.category + "',0,CURTIME(),0,0,'" + oProduct.category + "','" + oProduct.category + "',0,NOW(),0)";
+                //    int k = s.InsertOrUpdateOrDeleteValueToDatabase(catagory);
+                //    catagory = "select id_category from oc_categories where name='" + oProduct.category + "'";
+                //    dt = s.selectAllfromDatabaseAndReturnDataTable(catagory);
+                //    if (dt.Rows.Count > 0)
+                //    {
+                //        catID = int.Parse(dt.Rows[0][0].ToString());
+                //    }
+                //}
 
-                string location = "select id_location from oc_locations where name='" + oProduct.location + "'";
-                DataTable dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
-                if (dtL.Rows.Count > 0)
+                List<KeyValuePair<string, string>> LocationList = new List<KeyValuePair<string, string>>();
+                LocationList = oMyTable.LocationList();
+                foreach (KeyValuePair<string, string> kvp in LocationList)
                 {
-                    lID = int.Parse(dtL.Rows[0][0].ToString());
-                }
-                else
-                {
-                    location = "INSERT INTO barua910_oc1.oc_locations(`name`,`order`,id_location_parent,parent_deep,seoname,description,last_modified,has_image)VALUES('" + oProduct.location + "',0,0,0,'" + oProduct.location + "','" + oProduct.location + "',NOW(),0);";
-                    int k = s.InsertOrUpdateOrDeleteValueToDatabase(location);
-                    location = "select id_location from oc_locations where name='" + oProduct.location + "'";
-                    dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
-                    if (dtL.Rows.Count > 0)
-                    {
-                        lID = int.Parse(dtL.Rows[0][0].ToString());
-                    }
-                }
+                    if(kvp.Key==oProduct.location)
+                        lID=int.Parse(kvp.Value);                    
+                }               
+                //string location = "select id_location from oc_locations where name='" + oProduct.location + "'";
+                //DataTable dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
+                //if (dtL.Rows.Count > 0)
+                //{
+                //    lID = int.Parse(dtL.Rows[0][0].ToString());
+                //}
+                //else
+                //{
+                //    location = "INSERT INTO barua910_oc1.oc_locations(`name`,`order`,id_location_parent,parent_deep,seoname,description,last_modified,has_image)VALUES('" + oProduct.location + "',0,0,0,'" + oProduct.location + "','" + oProduct.location + "',NOW(),0);";
+                //    int k = s.InsertOrUpdateOrDeleteValueToDatabase(location);
+                //    location = "select id_location from oc_locations where name='" + oProduct.location + "'";
+                //    dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
+                //    if (dtL.Rows.Count > 0)
+                //    {
+                //        lID = int.Parse(dtL.Rows[0][0].ToString());
+                //    }
+                //}
 
-                if (catID > 0)
+                if (catID > 0 && lID>0)
                 {
                     decimal price = 0;
                     string p = oProduct.show_attr.Replace("Tk.", "");
@@ -366,13 +416,13 @@ namespace Bikroy
                         if (Decimal.TryParse(p, out price))
                             price = decimal.Parse(p);
                     }
-                    string ads = "Select * from oc_ads where website='" + oProduct.URL + "'";
+                    string ads = "Select * from oc_ads where seotitle='" + oProduct.slug + "'";
                     DataTable dta = s.selectAllfromDatabaseAndReturnDataTable(ads);
                     if (dta.Rows.Count > 0)
                     { }
                     else
                     {
-                        ads = "INSERT INTO barua910_oc1.oc_ads(id_user,id_category,id_location,title,seotitle,description,address,price,phone,website,ip_address,created,published,featured,last_modified,status,has_images,stock,rate)VALUES(1," + catID + "," + lID + ",'" + oProduct.title + "','" + oProduct.title + "','" + oProduct.Desc + "','" + oProduct.location + "'," + price + ",'" + oProduct.Phone + "','" + oProduct.URL + "',0,NOW(),NOW(),NOW(),NOW(),1,"+oProduct.ImagePath.Count+",0,0);";
+                        ads = "INSERT INTO barua910_oc1.oc_ads(id_user,id_category,id_location,title,seotitle,description,address,price,phone,website,ip_address,created,published,featured,last_modified,status,has_images,stock,rate)VALUES(1," + catID + "," + lID + ",'" + oProduct.title + "','" + oProduct.slug + "','" + oProduct.Desc + "','" + oProduct.Address + "'," + price + ",'" + oProduct.Phone + "','" + oProduct.Website + "',0,NOW(),NOW(),NOW(),NOW(),1,"+oProduct.ImagePath.Count+",0,0);";
                         int k2 = s.InsertOrUpdateOrDeleteValueToDatabase(ads);
                         if (k2 > 0)
                         {
