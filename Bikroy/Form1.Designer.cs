@@ -31,7 +31,6 @@
             this.btnTest = new System.Windows.Forms.Button();
             this.txtfrom = new System.Windows.Forms.TextBox();
             this.txtTo = new System.Windows.Forms.TextBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnTest
@@ -58,22 +57,11 @@
             this.txtTo.Size = new System.Drawing.Size(70, 20);
             this.txtTo.TabIndex = 2;
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(193, 151);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 3;
-            this.button1.Text = "Test";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(298, 197);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.txtTo);
             this.Controls.Add(this.txtfrom);
             this.Controls.Add(this.btnTest);
@@ -90,7 +78,6 @@
         private System.Windows.Forms.Button btnTest;
         private System.Windows.Forms.TextBox txtfrom;
         private System.Windows.Forms.TextBox txtTo;
-        private System.Windows.Forms.Button button1;
     }
 }
 

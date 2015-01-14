@@ -18,134 +18,124 @@ using System.Net;
 
 namespace Bikroy
 {
-    public partial class Form1 : Form
+   public class MainApp
     {
-        private static Browser browser = new Browser();
-        public Form1()
-        {
-            InitializeComponent();
-        }
+       private static Browser browser = new Browser();     
 
-        #region [Main Scraper]	
-        
-        private void ScrapProcess()
-        {
-            try
-            {
-                List<Product> Products = new List<Product>();
-                int totalpage = 0;
-                //int FromPage = Convert.ToInt32(txtfrom.Text);
-                //int ToPages = Convert.ToInt32(txtTo.Text);
+       #region [Main Scraper]
 
-                browser.Url = "http://bikroy.com/en/ads-in-bangladesh?_=1420294568273";
-                String response = browser.AjaxPost();
-                String productsJson = browser.parseJson(response)["tabs"].ToString().ToString();
-                totalpage = Convert.ToInt32(browser.parseJson(productsJson)["all"].ToString());
+       public void ScrapProcess()
+       {
+           try
+           {
+               List<Product> Products = new List<Product>();
+               int totalpage = 0;
+               //int FromPage = Convert.ToInt32(txtfrom.Text);
+               //int ToPages = Convert.ToInt32(txtTo.Text);
 
-                int FromPage = 1;
-                int ToPages = 1;
-                if ((totalpage % 27) > 0)
-                    ToPages = (totalpage / 27) + 1;
-                else
-                    ToPages = totalpage / 27;
+               browser.Url = "http://bikroy.com/en/ads-in-bangladesh?_=1420294568273";
+               String response = browser.AjaxPost();
+               String productsJson = browser.parseJson(response)["tabs"].ToString().ToString();
+               totalpage = Convert.ToInt32(browser.parseJson(productsJson)["all"].ToString());
 
-                for (int i = FromPage; i <= ToPages; i++)
-                {
-                    if (i <= 1)
-                        browser.Url = "http://bikroy.com/en/ads-in-bangladesh?_=1420294568273";
-                    else
-                        browser.Url = "http://bikroy.com/en/ads-in-bangladesh?page=" + i.ToString() + "&_=1420294568273";
+               int FromPage = 1;
+               int ToPages = 1;
+               if ((totalpage % 27) > 0)
+                   ToPages = (totalpage / 27) + 1;
+               else
+                   ToPages = totalpage / 27;
+
+               for (int i = FromPage; i <= ToPages; i++)
+               {
+                   if (i <= 1)
+                       browser.Url = "http://bikroy.com/en/ads-in-bangladesh?_=1420294568273";
+                   else
+                       browser.Url = "http://bikroy.com/en/ads-in-bangladesh?page=" + i.ToString() + "&_=1420294568273";
 
 
-                    Console.Write("Please Wait.....");
-                    response = browser.AjaxPost();
+                   Console.Write("Please Wait..... \n");
+                   response = browser.AjaxPost();
 
-                    productsJson = browser.parseJson(response)["ads"].ToString().ToString();
+                   productsJson = browser.parseJson(response)["ads"].ToString().ToString();
 
-                    Newtonsoft.Json.Linq.JArray a = Newtonsoft.Json.Linq.JArray.Parse(productsJson);
-                    foreach (Newtonsoft.Json.Linq.JObject o in a.Children<Newtonsoft.Json.Linq.JObject>())
-                    {
-                        Product oProduct = new Product();
-                        foreach (Newtonsoft.Json.Linq.JProperty p in o.Properties())
-                        {
-                            string name = p.Name;
-                            string value = p.Value.ToString();
-                            if (name == "location")
-                            {
-                                oProduct.location = p.Value.ToString();
-                            }
-                            if (name == "category")
-                            {
-                                oProduct.category = p.Value.ToString();
-                            }
-                            if (name == "slug")
-                            {
-                                string url = "http://bikroy.com/en/" + p.Value.ToString();
-                                oProduct.slug = p.Value.ToString();
-                                oProduct.ImageDir = p.Value.ToString();
-                                oProduct.URL = url;
-                               
-                            }
-                            if (name == "poster_name")
-                            {
-                                oProduct.poster_name = p.Value.ToString();
-                            }
-                            if (name == "title")
-                            {
-                                oProduct.title = p.Value.ToString();
-                            }
-                            //if (name == "show_image")
-                            //{
-                            //    oProduct.show_image = p.Value.ToString();
-                            //}
-                            if (name == "show_attr")
-                            {
-                                oProduct.show_attr = p.Value.ToString().Replace("{", "").Replace("}", "").Replace('"', ' ').Replace(" value :", "").Trim();
+                   Newtonsoft.Json.Linq.JArray a = Newtonsoft.Json.Linq.JArray.Parse(productsJson);
+                   foreach (Newtonsoft.Json.Linq.JObject o in a.Children<Newtonsoft.Json.Linq.JObject>())
+                   {
+                       Product oProduct = new Product();
+                       foreach (Newtonsoft.Json.Linq.JProperty p in o.Properties())
+                       {
+                           string name = p.Name;
+                           string value = p.Value.ToString();
+                           if (name == "location")
+                           {
+                               oProduct.location = p.Value.ToString();
+                           }
+                           if (name == "category")
+                           {
+                               oProduct.category = p.Value.ToString();
+                           }
+                           if (name == "slug")
+                           {
+                               string url = "http://bikroy.com/en/" + p.Value.ToString();
+                               oProduct.slug = p.Value.ToString();
+                               oProduct.ImageDir = p.Value.ToString();
+                               oProduct.URL = url;
 
-                            }
-                        }
-                        if (CatagoryID(oProduct.category) > 0)
-                        {
-                            oProduct = parsepage(oProduct.URL, oProduct);
-                            InsertToDatabase(oProduct);
-                            //Products.Add(oProduct);
-                            Console.WriteLine(oProduct.title);
-                        }
-                    }
+                           }
+                           if (name == "poster_name")
+                           {
+                               oProduct.poster_name = p.Value.ToString();
+                           }
+                           if (name == "title")
+                           {
+                               oProduct.title = p.Value.ToString();
+                           }
+                           //if (name == "show_image")
+                           //{
+                           //    oProduct.show_image = p.Value.ToString();
+                           //}
+                           if (name == "show_attr")
+                           {
+                               oProduct.show_attr = p.Value.ToString().Replace("{", "").Replace("}", "").Replace('"', ' ').Replace(" value :", "").Trim();
 
-                }
-                Console.WriteLine("---- Completed ----");
-                ////Export to Excel
-                //var wb = new ClosedXML.Excel.XLWorkbook();
-                //DataTable dt = Products.ToDataTable();
+                           }
+                       }
+                       if (CatagoryID(oProduct.category) > 0)
+                       {
+                           oProduct = parsepage(oProduct.URL, oProduct);
+                           InsertToDatabase(oProduct);
+                           //Products.Add(oProduct);
+                           Console.WriteLine(oProduct.title+"\n");
+                       }
+                   }
 
-                //// Add a DataTable as a worksheet
-                //wb.Worksheets.Add(dt, "Report");
-                //SaveFileDialog sfd = new SaveFileDialog();
-                //sfd.Filter = "Excel Documents (*.xlsx)|*.xlsx";
-                //sfd.FileName = "Report.xlsx";
-                //if (sfd.ShowDialog() == DialogResult.OK)
-                //{
-                //    //ToCsV(dataGridView1, @"c:\export.xls");
-                //    wb.SaveAs(sfd.FileName); // Here dataGridview1 is your grid view name 
-                //}
-                //
-            }
-            catch(Exception ex) {
-                Utility.ErrorLog(ex, null);
-            }
-        }
-        #endregion
+               }
+               Console.WriteLine("---- Completed ----");
+               ////Export to Excel
+               //var wb = new ClosedXML.Excel.XLWorkbook();
+               //DataTable dt = Products.ToDataTable();
 
-        private void btnTest_Click(object sender, EventArgs e)
-        {
-
-            ScrapProcess();
-
-        }
+               //// Add a DataTable as a worksheet
+               //wb.Worksheets.Add(dt, "Report");
+               //SaveFileDialog sfd = new SaveFileDialog();
+               //sfd.Filter = "Excel Documents (*.xlsx)|*.xlsx";
+               //sfd.FileName = "Report.xlsx";
+               //if (sfd.ShowDialog() == DialogResult.OK)
+               //{
+               //    //ToCsV(dataGridView1, @"c:\export.xls");
+               //    wb.SaveAs(sfd.FileName); // Here dataGridview1 is your grid view name 
+               //}
+               //
+           }
+           catch (Exception ex)
+           {
+               Utility.ErrorLog(ex, null);
+           }
+       }
+       #endregion
 
         #region [Details Page Scrap]
-       
+
         private Product parsepage(string url, Product oProduct)
         {
             try
@@ -250,7 +240,7 @@ namespace Bikroy
 
         private String GetImageFolder(string id)
         {
-            String FolderName = String.Format("{0}\\images\\" + System.DateTime.Now.Year.ToString() + "\\" + System.DateTime.Now.Month.ToString() + "\\" + System.DateTime.Now.Day.ToString() + "\\" + id, Application.StartupPath);            
+            String FolderName = String.Format("{0}\\images\\" + System.DateTime.Now.Year.ToString() + "\\" + System.DateTime.Now.Month.ToString() + "\\" + System.DateTime.Now.Day.ToString() + "\\" + id, Application.StartupPath);
             return FolderName;
         }
 
@@ -303,7 +293,7 @@ namespace Bikroy
                     if (s.Length != 0)
                     {
                         String ImageFileName = GetFileAndExtension(s);
-                        String FileName = String.Format("{0}\\{1}",CreateProductDirectory(id, oProduct), ImageFileName);
+                        String FileName = String.Format("{0}\\{1}", CreateProductDirectory(id, oProduct), ImageFileName);
                         browser.Url = (s.StartsWith("http:") ? s : "http:\\");
                         browser.DownloadFile(FileName);
                         //Upload to FTP
@@ -316,7 +306,7 @@ namespace Bikroy
         #endregion
 
         #region [Email]
-      
+
         public string emas(string text)
         {
             string email = string.Empty;
@@ -333,7 +323,7 @@ namespace Bikroy
             // Report on each match.
             foreach (Match match in matches)
             {
-                email=match.Value.ToString();
+                email = match.Value.ToString();
                 break;
             }
             return email;
@@ -352,10 +342,10 @@ namespace Bikroy
             MatchCollection matches = urlRx.Matches(txt);
             foreach (Match match in matches)
             {
-                webaddress=match.Value;
+                webaddress = match.Value;
                 break;
             }
-           
+
             return webaddress;
         }
         #endregion
@@ -363,7 +353,7 @@ namespace Bikroy
         #region [Catagory ID]
         private int CatagoryID(string category)
         {
-            int catID = 0;           
+            int catID = 0;
             MyTable oMyTable = new MyTable();
             List<KeyValuePair<string, string>> catagoryList = new List<KeyValuePair<string, string>>();
             catagoryList = oMyTable.CatagoryList();
@@ -407,9 +397,9 @@ namespace Bikroy
                 LocationList = oMyTable.LocationList();
                 foreach (KeyValuePair<string, string> kvp in LocationList)
                 {
-                    if(kvp.Key==oProduct.location)
-                        lID=int.Parse(kvp.Value);                    
-                }               
+                    if (kvp.Key == oProduct.location)
+                        lID = int.Parse(kvp.Value);
+                }
                 //string location = "select id_location from oc_locations where name='" + oProduct.location + "'";
                 //DataTable dtL = s.selectAllfromDatabaseAndReturnDataTable(location);
                 //if (dtL.Rows.Count > 0)
@@ -428,7 +418,7 @@ namespace Bikroy
                 //    }
                 //}
 
-                if (catID > 0 && lID>0)
+                if (catID > 0 && lID > 0)
                 {
                     decimal price = 0;
                     string p = oProduct.show_attr.Replace("Tk.", "");
@@ -443,7 +433,7 @@ namespace Bikroy
                     { }
                     else
                     {
-                        ads = "INSERT INTO barua910_oc1.oc_ads(id_user,id_category,id_location,title,seotitle,description,address,price,phone,website,ip_address,created,published,featured,last_modified,status,has_images,stock,rate)VALUES(1," + catID + "," + lID + ",'" + oProduct.title + "','" + oProduct.slug + "','" + oProduct.Desc + "','" + oProduct.Address + "'," + price + ",'" + oProduct.Phone + "','" + oProduct.Website + "',0,NOW(),NOW(),NOW(),NOW(),1,"+oProduct.ImagePath.Count+",0,0);";
+                        ads = "INSERT INTO barua910_oc1.oc_ads(id_user,id_category,id_location,title,seotitle,description,address,price,phone,website,ip_address,created,published,featured,last_modified,status,has_images,stock,rate)VALUES(1," + catID + "," + lID + ",'" + oProduct.title + "','" + oProduct.slug + "','" + oProduct.Desc + "','" + oProduct.Address + "'," + price + ",'" + oProduct.Phone + "','" + oProduct.Website + "',0,NOW(),NOW(),NOW(),NOW(),1," + oProduct.ImagePath.Count + ",0,0);";
                         int k2 = s.InsertOrUpdateOrDeleteValueToDatabase(ads);
                         if (k2 > 0)
                         {
@@ -463,10 +453,7 @@ namespace Bikroy
             }
         }
         #endregion
-        private void Form1_Load(object sender, EventArgs e)
-        {
 
-        }
 
         #region [Upload to FTP]
         public static void MakeFTPDir(string ftpAddress, string pathToCreate, string login, string password)
@@ -512,15 +499,11 @@ namespace Bikroy
             }
             catch (Exception ex)
             {
-                
+
             }
         }
 
         #endregion
 
-        //private void button1_Click(object sender, EventArgs e)
-        //{
-        //    MakeFTPDir("ftp.spbtel.com", "images/test", "riskypathak@spbtel.com", "infosys@123");
-        //}
     }
 }
