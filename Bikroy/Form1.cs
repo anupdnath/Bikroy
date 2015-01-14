@@ -14,6 +14,7 @@ using System.Reflection;
 using System.IO;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
+using System.Net;
 
 namespace Bikroy
 {
@@ -246,7 +247,21 @@ namespace Bikroy
 
         private String GetImageFolder(string id)
         {
-            String FolderName = String.Format("{0}\\image\\" + System.DateTime.Now.Year.ToString() + "\\" + System.DateTime.Now.Month.ToString() + "\\" + System.DateTime.Now.Day.ToString() + "\\" + id, Application.StartupPath);            
+            String FolderName = String.Format("{0}\\images\\" + System.DateTime.Now.Year.ToString() + "\\" + System.DateTime.Now.Month.ToString() + "\\" + System.DateTime.Now.Day.ToString() + "\\" + id, Application.StartupPath);            
+            return FolderName;
+        }
+
+        private String GetFTPImageFolder(string id)
+        {
+            string monthno = System.DateTime.Now.Month.ToString();
+            if (monthno.Length == 1)
+            { monthno = "0" + monthno; }
+
+            string dayno = System.DateTime.Now.Day.ToString();
+            if (dayno.Length == 1)
+            { dayno = "0" + dayno; }
+
+            String FolderName = String.Format("images/" + System.DateTime.Now.Year.ToString() + "/" + monthno + "/" + dayno + "/" + id);
             return FolderName;
         }
         public static String GetFileExtension(string FileName)
@@ -288,6 +303,9 @@ namespace Bikroy
                         String FileName = String.Format("{0}\\{1}",CreateProductDirectory(id, oProduct), ImageFileName);
                         browser.Url = (s.StartsWith("http:") ? s : "http:\\");
                         browser.DownloadFile(FileName);
+                        //Upload to FTP
+                        MakeFTPDir("ftp.spbtel.com", GetFTPImageFolder(id), "riskypathak@spbtel.com", "infosys@123");
+                        Upload("ftp.spbtel.com", GetFTPImageFolder(id), "riskypathak@spbtel.com", "infosys@123", FileName);
                     }
                 }
             }
@@ -426,7 +444,7 @@ namespace Bikroy
                         int k2 = s.InsertOrUpdateOrDeleteValueToDatabase(ads);
                         if (k2 > 0)
                         {
-                            ads = "Select id_ad from oc_ads where website='" + oProduct.URL + "'";
+                            ads = "Select id_ad from oc_ads where seotitle='" + oProduct.slug + "'";
                             dta = s.selectAllfromDatabaseAndReturnDataTable(ads);
                             if (dta.Rows.Count > 0)
                             {
@@ -444,7 +462,62 @@ namespace Bikroy
         #endregion
         private void Form1_Load(object sender, EventArgs e)
         {
-           
+
+        }
+
+        #region [Upload to FTP]
+        public static void MakeFTPDir(string ftpAddress, string pathToCreate, string login, string password)
+        {
+            FtpWebRequest reqFTP = null;
+            Stream ftpStream = null;
+
+            string[] subDirs = pathToCreate.Split('/');
+
+            string currentDir = string.Format("ftp://{0}", ftpAddress);
+
+            foreach (string subDir in subDirs)
+            {
+                try
+                {
+                    currentDir = currentDir + "/" + subDir;
+                    reqFTP = (FtpWebRequest)FtpWebRequest.Create(currentDir);
+                    reqFTP.Method = WebRequestMethods.Ftp.MakeDirectory;
+                    reqFTP.UseBinary = true;
+                    reqFTP.Credentials = new NetworkCredential(login, password);
+                    FtpWebResponse response = (FtpWebResponse)reqFTP.GetResponse();
+                    ftpStream = response.GetResponseStream();
+                    ftpStream.Close();
+                    response.Close();
+                }
+                catch (Exception ex)
+                {
+                    //directory already exist I know that is weak but there is no way to check if a folder exist on ftp...
+                }
+            }
+        }
+
+        private static void Upload(string ftpAddress, string pathToCreate, string userName, string password, string filename)
+        {
+            try
+            {
+                string currentDir = string.Format("ftp://{0}//{1}", ftpAddress, pathToCreate);
+                using (System.Net.WebClient client = new System.Net.WebClient())
+                {
+                    client.Credentials = new System.Net.NetworkCredential(userName, password);
+                    client.UploadFile((currentDir + "/") + new FileInfo(filename).Name, "STOR", filename);
+                }
+            }
+            catch (Exception ex)
+            {
+                
+            }
+        }
+
+        #endregion
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            MakeFTPDir("ftp.spbtel.com", "images/test", "riskypathak@spbtel.com", "infosys@123");
         }
     }
 }
