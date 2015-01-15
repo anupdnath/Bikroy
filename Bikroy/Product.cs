@@ -15,6 +15,7 @@ namespace Bikroy
         public String poster_name { get; set; }
         public String title { get; set; }
         public String URL { get; set; }
+        public String PostedBy { get; set; }
         //public String has_many_images { get; set; }
         //public String show_image { get; set; }
 

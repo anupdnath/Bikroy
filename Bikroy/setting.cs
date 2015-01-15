@@ -127,7 +127,7 @@ namespace Bikroy
 		/// <param name="text">string to be replaced</param>
 		/// <returns>string</returns>
 		/// <remarks></remarks>
-		public object apostropy(string text)
+		public string apostropy(string text)
 		{
 			if (string.IsNullOrEmpty(text)) {
 				return "";
